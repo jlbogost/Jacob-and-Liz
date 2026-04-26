@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacob & Liz Registry</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #8B6F47 0%, #5D4E37 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        button.active {
+            background: #8B6F47;
+            color: white;
+            border-color: #8B6F47;
+        }
+
+        .admin-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .admin-button {
+            background: #8B6F47;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        .admin-button:hover {
+            background: #5D4E37;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .gifts-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #8B6F47;
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0d5c8;
+        }
+
+        .gift-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .gift-card {
+            background: white;
+            border: 2px solid #e0d5c8;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gift-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: #8B6F47;
+        }
+
+        .gift-card.claimed {
+            opacity: 0.7;
+            background: #f5f5f5;
+        }
+
+        .gift-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .gift-details {
+            font-size: 0.95em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .gift-price {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #8B6F47;
+            margin-bottom: 10px;
+        }
+
+        .gift-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .gift-status.unclaimed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .gift-status.claimed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .who-sent {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .gift-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .claim-btn, .edit-btn, .delete-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .claim-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .claim-btn:hover {
+            background: #218838;
+        }
+
+        .claim-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .edit-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #0056b3;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .funds-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e0d5c8;
+        }
+
+        .fund-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .fund-card {
+            background: linear-gradient(135deg, #e8dcc8 0%, #d4c4b0 100%);
+            border: 2px solid #8B6F47;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        .fund-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .fund-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #8B6F47;
+        }
+
+        .fund-description {
+            font-size: 0.95em;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            color: #666;
+        }
+
+        .fund-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #8B6F47;
+        }
+
+        .modal input, .modal textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .modal textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border-radius: 4px;
+        }
+
+        .modal-buttons .confirm-btn {
+            background: #8B6F47;
+            color: white;
+        }
+
+        .modal-buttons .cancel-btn {
+            background: #ccc;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            background: #28a745;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-buttons {
+                justify-content: center;
+            }
+
+            .gift-grid, .fund-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Jacob & Liz</h1>
+            <p>Wedding Registry</p>
+        </header>
+
+        <div class="controls">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="All">All Items</button>
+                <button class="filter-btn" data-filter="Kitchen">Kitchen</button>
+                <button class="filter-btn" data-filter="Bathroom">Bathroom</button>
+                <button class="filter-btn" data-filter="Other">Other</button>
+            </div>
+            <div class="admin-buttons">
+                <button class="admin-button" id="adminBtn">Admin</button>
+                <button class="admin-button" id="settingsBtn">Settings</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="gifts-section">
+                <div class="section-title">Registry Items</div>
+                <div class="gift-grid" id="giftGrid"></div>
+            </div>
+
+            <div class="funds-section">
+                <div class="section-title">Cash Funds</div>
+                <div class="fund-grid" id="fundGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Claim Modal -->
+    <div class="modal" id="claimModal">
+        <div class="modal-content">
+            <h2>Claim Gift</h2>
+            <p id="claimMessage" style="margin-bottom: 20px; color: #666;"></p>
+            <input type="text" id="claimerName" placeholder="Your name" />
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeClaimModal()">Cancel</button>
+                <button class="confirm-btn" onclick="confirmClaim()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <h2>Admin Panel</h2>
+            <input type="password" id="adminPassword" placeholder="Enter password" />
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeAdminModal()">Cancel</button>
+                <button class="confirm-btn" onclick="checkPassword()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Gift Modal -->
+    <div class="modal" id="addGiftModal">
+        <div class="modal-content">
+            <h2 id="addGiftTitle">Add New Gift</h2>
+            <input type="text" id="giftName" placeholder="Item name" />
+            <input type="text" id="giftStore" placeholder="Store/Retailer" />
+            <input type="text" id="giftPrice" placeholder="Price" />
+            <select id="giftCategory" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">Select Category</option>
+                <option value="Kitchen">Kitchen</option>
+                <option value="Bathroom">Bathroom</option>
+                <option value="Other">Other</option>
+            </select>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeAddGiftModal()">Cancel</button>
+                <button class="confirm-btn" onclick="saveGift()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Fund Modal -->
+    <div class="modal" id="addFundModal">
+        <div class="modal-content">
+            <h2 id="addFundTitle">Add New Fund</h2>
+            <input type="text" id="fundName" placeholder="Fund name" />
+            <textarea id="fundDescription" placeholder="Description"></textarea>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeAddFundModal()">Cancel</button>
+                <button class="confirm-btn" onclick="saveFund()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <div style="margin-bottom: 20px;">
+                <button class="admin-button" style="width: 100%; margin-bottom: 10px;" onclick="showAddGiftTab()">Add Gift</button>
+                <button class="admin-button" style="width: 100%;" onclick="showAddFundTab()">Add Fund</button>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeSettings()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://sdtvltfvhhdjxzulhqby.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkdHZsdGZ2aGhkanh6dWxocWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI4NDI5MDcsImV4cCI6MjAxODQxODkwN30.4n8sG2yUCjKLvFaYd9V7jZNsKaL1V-eGhLkNNvA8OXU';
+        const { createClient } = window.supabase;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        let adminUnlocked = false;
+        let currentFilter = 'All';
+        let allGifts = [];
+        let allFunds = [];
+        let editingGiftId = null;
+        let editingFundId = null;
+
+        async function init() {
+            await loadGifts();
+            await loadFunds();
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    renderGifts();
+                });
+            });
+
+            document.getElementById('adminBtn').addEventListener('click', openAdminModal);
+            document.getElementById('settingsBtn').addEventListener('click', openSettings);
+        }
+
+        function openAdminModal() {
+            document.getElementById('adminModal').classList.add('show');
+            document.getElementById('adminPassword').focus();
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.remove('show');
+            document.getElementById('adminPassword').value = '';
+        }
+
+        async function checkPassword() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === 'jacobandliz') {
+                adminUnlocked = true;
+                closeAdminModal();
+                openSettings();
+                showToast('Admin unlocked!', 'success');
+            } else {
+                showToast('Invalid password', 'error');
+            }
+        }
+
+        function openSettings() {
+            if (!adminUnlocked) {
+                showToast('Admin access required', 'error');
+                return;
+            }
+            document.getElementById('settingsModal').classList.add('show');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('show');
+        }
+
+        function showAddGiftTab() {
+            editingGiftId = null;
+            document.getElementById('addGiftTitle').textContent = 'Add New Gift';
+            document.getElementById('giftName').value = '';
+            document.getElementById('giftStore').value = '';
+            document.getElementById('giftPrice').value = '';
+            document.getElementById('giftCategory').value = '';
+            document.getElementById('addGiftModal').classList.add('show');
+            closeSettings();
+        }
+
+        function showAddFundTab() {
+            editingFundId = null;
+            document.getElementById('addFundTitle').textContent = 'Add New Fund';
+            document.getElementById('fundName').value = '';
+            document.getElementById('fundDescription').value = '';
+            document.getElementById('addFundModal').classList.add('show');
+            closeSettings();
+        }
+
+        async function loadGifts() {
+            try {
+                const { data, error } = await supabase
+                    .from('gifts')
+                    .select('*');
+                if (error) throw error;
+                allGifts = data || [];
+                renderGifts();
+            } catch (error) {
+                console.error('Error loading gifts:', error);
+                showToast('Error loading gifts', 'error');
+            }
+        }
+
+        function renderGifts() {
+            const list = currentFilter === 'All' ? allGifts : allGifts.filter(g => g.category === currentFilter);
+            
+            const sorted = list.sort((a, b) => {
+                if (a.purchased === b.purchased) return 0;
+                return a.purchased ? 1 : -1;
+            });
+
+            if (sorted.length === 0) {
+                document.getElementById('giftGrid').innerHTML = '<div class="empty-message">No items in this category</div>';
+                return;
+            }
+
+            document.getElementById('giftGrid').innerHTML = sorted.map(gift => `
+                <div class="gift-card ${gift.purchased ? 'claimed' : ''}">
+                    <div class="gift-name">${gift.name}</div>
+                    <div class="gift-details"><strong>Store:</strong> ${gift.store || 'N/A'}</div>
+                    <div class="gift-details"><strong>Category:</strong> ${gift.category || 'N/A'}</div>
+                    <div class="gift-price">${gift.price || 'N/A'}</div>
+                    <div class="gift-status ${gift.purchased ? 'claimed' : 'unclaimed'}">
+                        ${gift.purchased ? 'Claimed' : 'Unclaimed'}
+                    </div>
+                    ${gift.who_sent ? `<div class="who-sent"><strong>Sent by:</strong> ${gift.who_sent}</div>` : ''}
+                    <div class="gift-actions">
+                        ${!gift.purchased ? `<button class="claim-btn" onclick="openClaimModal(${gift.id}, '${gift.name}')">Claim</button>` : ''}
+                        ${adminUnlocked ? `<button class="edit-btn" onclick="editGift(${gift.id})">Edit</button>` : ''}
+                        ${adminUnlocked ? `<button class="delete-btn" onclick="deleteGift(${gift.id})">Delete</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openClaimModal(id, name) {
+            document.getElementById('claimMessage').textContent = `Claim "${name}"?`;
+            document.getElementById('claimerName').value = '';
+            window.currentClaimId = id;
+            document.getElementById('claimModal').classList.add('show');
+            document.getElementById('claimerName').focus();
+        }
+
+        function closeClaimModal() {
+            document.getElementById('claimModal').classList.remove('show');
+        }
+
+        async function confirmClaim() {
+            const name = document.getElementById('claimerName').value.trim();
+            if (!name) {
+                showToast('Please enter your name', 'error');
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('gifts')
+                    .update({ purchased: true, who_sent: name })
+                    .eq('id', window.currentClaimId);
+                if (error) throw error;
+                closeClaimModal();
+                await loadGifts();
+                showToast('Gift claimed successfully!', 'success');
+            } catch (error) {
+                console.error('Error claiming gift:', error);
+                showToast('Error claiming gift', 'error');
+            }
+        }
+
+        async function saveGift() {
+            const name = document.getElementById('giftName').value.trim();
+            const store = document.getElementById('giftStore').value.trim();
+            const price = document.getElementById('giftPrice').value.trim();
+            const category = document.getElementById('giftCategory').value;
+
+            if (!name || !category) {
+                showToast('Please fill in required fields', 'error');
+                return;
+            }
+
+            try {
+                if (editingGiftId) {
+                    const { error } = await supabase
+                        .from('gifts')
+                        .update({ name, store, price, category })
+                        .eq('id', editingGiftId);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase
+                        .from('gifts')
+                        .insert([{ name, store, price, category, purchased: false }]);
+                    if (error) throw error;
+                }
+                closeAddGiftModal();
+                await loadGifts();
+                showToast(editingGiftId ? 'Gift updated!' : 'Gift added!', 'success');
+            } catch (error) {
+                console.error('Error saving gift:', error);
+                showToast('Error saving gift', 'error');
+            }
+        }
+
+        function editGift(id) {
+            const gift = allGifts.find(g => g.id === id);
+            if (!gift) return;
+            
+            editingGiftId = id;
+            document.getElementById('addGiftTitle').textContent = 'Edit Gift';
+            document.getElementById('giftName').value = gift.name;
+            document.getElementById('giftStore').value = gift.store || '';
+            document.getElementById('giftPrice').value = gift.price || '';
+            document.getElementById('giftCategory').value = gift.category;
+            document.getElementById('addGiftModal').classList.add('show');
+        }
+
+        function closeAddGiftModal() {
+            document.getElementById('addGiftModal').classList.remove('show');
+            editingGiftId = null;
+        }
+
+        async function deleteGift(id) {
+            if (!confirm('Are you sure?')) return;
+            try {
+                const { error } = await supabase
+                    .from('gifts')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
+                await loadGifts();
+                showToast('Gift deleted!', 'success');
+            } catch (error) {
+                console.error('Error deleting gift:', error);
+                showToast('Error deleting gift', 'error');
+            }
+        }
+
+        async function loadFunds() {
+            try {
+                const { data, error } = await supabase
+                    .from('funds')
+                    .select('*');
+                if (error) throw error;
+                allFunds = data || [];
+                renderFunds();
+            } catch (error) {
+                console.error('Error loading funds:', error);
+                showToast('Error loading funds', 'error');
+            }
+        }
+
+        function renderFunds() {
+            if (allFunds.length === 0) {
+                document.getElementById('fundGrid').innerHTML = '<div class="empty-message">No funds available</div>';
+                return;
+            }
+
+            document.getElementById('fundGrid').innerHTML = allFunds.map(fund => `
+                <div class="fund-card">
+                    <div class="fund-name">${fund.name}</div>
+                    <div class="fund-description">${fund.description || ''}</div>
+                    ${adminUnlocked ? `
+                        <div class="fund-actions">
+                            <button class="edit-btn" style="flex: 1;" onclick="editFund(${fund.id})">Edit</button>
+                            <button class="delete-btn" style="flex: 1;" onclick="deleteFund(${fund.id})">Delete</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function saveFund() {
+            const name = document.getElementById('fundName').value.trim();
+            const description = document.getElementById('fundDescription').value.trim();
+
+            if (!name) {
+                showToast('Please enter fund name', 'error');
+                return;
+            }
+
+            try {
+                if (editingFundId) {
+                    const { error } = await supabase
+                        .from('funds')
+                        .update({ name, description })
+                        .eq('id', editingFundId);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase
+                        .from('funds')
+                        .insert([{ name, description }]);
+                    if (error) throw error;
+                }
+                closeAddFundModal();
+                await loadFunds();
+                showToast(editingFundId ? 'Fund updated!' : 'Fund added!', 'success');
+            } catch (error) {
+                console.error('Error saving fund:', error);
+                showToast('Error saving fund', 'error');
+            }
+        }
+
+        function editFund(id) {
+            const fund = allFunds.find(f => f.id === id);
+            if (!fund) return;
+            
+            editingFundId = id;
+            document.getElementById('addFundTitle').textContent = 'Edit Fund';
+            document.getElementById('fundName').value = fund.name;
+            document.getElementById('fundDescription').value = fund.description || '';
+            document.getElementById('addFundModal').classList.add('show');
+        }
+
+        function closeAddFundModal() {
+            document.getElementById('addFundModal').classList.remove('show');
+            editingFundId = null;
+        }
+
+        async function deleteFund(id) {
+            if (!confirm('Are you sure?')) return;
+            try {
+                const { error } = await supabase
+                    .from('funds')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
+                await loadFunds();
+                showToast('Fund deleted!', 'success');
+            } catch (error) {
+                console.error('Error deleting fund:', error);
+                showToast('Error deleting fund', 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
