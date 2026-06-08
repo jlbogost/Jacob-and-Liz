@@ -419,7 +419,7 @@ function renderGifts() {
           <div class="gift-price">${escapeHtml(g.price || '')}</div>
           <div class="gift-actions">
             ${g.url ? `<a href="${escapeAttr(g.url)}" target="_blank" class="btn-link">View ↗</a>` : ''}
-            ${!g.purchased ? `<button class="btn-claim" onclick="openClaimModal('${g.id}', ${JSON.stringify(g.name || '')})">Claim</button>` : ''}
+            ${!g.purchased ? `<button class="btn-claim" onclick="openClaimModal('${g.id}')">Claim</button>` : ''}
             ${adminUnlocked ? `<button class="btn-delete" onclick="deleteGift('${g.id}')">✕</button>` : ''}
           </div>
         </div>
@@ -476,8 +476,10 @@ async function deleteGift(id) {
 }
 
 // ─── CLAIM ────────────────────────────────────────────────────────────────────
-function openClaimModal(id, name) {
+function openClaimModal(id) {
   claimingId = id;
+  const gift = allGifts.find(g => String(g.id) === String(id));
+  const name = gift && gift.name ? gift.name : 'This gift';
   document.getElementById('claim-modal-text').textContent = `"${name}" will be marked as claimed so other guests know it's taken.`;
   const input = document.getElementById('claim-name-input');
   input.value = '';
